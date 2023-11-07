@@ -22,10 +22,16 @@ You can prove that two sets are equal by applying `subset_antisymm` or using the
 variable {α β : Type*} (x : α) (s t : Set α)
 
 /- We saw last time that we can prove that two sets are equal using `ext`. -/
-example : s ∩ t = t ∩ s := by sorry
+example : s ∩ t = t ∩ s := by {
+  ext x
+  simp only [mem_inter_iff, and_comm]
+}
 
 /- We can also use existing lemmas and `calc`. -/
-example : (s ∪ tᶜ) ∩ t = s ∩ t := by sorry
+example : (s ∪ tᶜ) ∩ t = s ∩ t := by {
+  calc (s ∪ tᶜ ) ∩ t = ( s ∩ t) ∪ ( tᶜ ∩ t):= by exact inter_distrib_right s tᶜ t
+    _= (s∩t):= by sorry
+}
 
 
 
@@ -39,7 +45,12 @@ example : (s ∪ tᶜ) ∩ t = s ∩ t := by sorry
 def Evens : Set ℕ := {n : ℕ | Even n}
 def Odds : Set ℕ := {n | ¬ Even n}
 
-example : Evens ∪ Odds = univ := by sorry
+example : Evens ∪ Odds = univ := by {
+  ext n
+  simp [Evens, Odds]
+  exact em (Even n)
+
+}
 
 
 
@@ -64,7 +75,10 @@ example (s : Set α) : 𝒫 s = {t | t ⊆ s} := by rfl -- \powerset
 /- What is the type of `𝒫 s`? -/
 
 
-example (s t : Set α) : 𝒫 (s ∩ t) = 𝒫 s ∩ 𝒫 t := by sorry
+example (s t : Set α) : 𝒫 (s ∩ t) = 𝒫 s ∩ 𝒫 t := by {
+  ext x
+  simp
+}
 
 
 
@@ -157,13 +171,63 @@ example : ({1, 3, 5} : Set ℝ) + {0, 10} = {1, 3, 5, 11, 13, 15} := by sorry
 
 /- # Exercises for the break. -/
 
-example {f : β → α} : f '' (f ⁻¹' s) ⊆ s := by sorry
+example {f : β → α} : f '' (f ⁻¹' s) ⊆ s := by simp; rfl
 
-example {f : β → α} (h : Surjective f) : s ⊆ f '' (f ⁻¹' s) := by sorry
+example {f : β → α} (h : Surjective f) : s ⊆ f '' (f ⁻¹' s) := by {
+  intro x hx
+  simp
+  obtain ⟨x_1, hx1 ⟩:= h x
+  use x_1
+  constructor
+  · exact mem_of_eq_of_mem hx1 hx
+  · exact hx1
+}
 
-example {f : α → β} (h : Injective f) : f '' s ∩ f '' t ⊆ f '' (s ∩ t) := by sorry
+example {f : α → β} (h : Injective f) : f '' s ∩ f '' t ⊆ f '' (s ∩ t) := by {
+  intro x hx
+  simp
+  obtain ⟨x1, hx1 ⟩:=  hx.1
+  obtain ⟨x2, hx2 ⟩:=  hx.2
+  have h3: x= f x2:= by {
+    have h4: f x2=x:= by exact hx2.2
+    exact id h4.symm
+  }
+  have h4: x1=x2:= by {
+    apply h
+    calc f x1 =x := by exact hx1.2
+      _= f x2 := by exact h3
+  }
+  have h5: x1 ∈ t:=by{
+    simp only [h4]
+    exact hx2.1
+  }
+  use x1
+  constructor
+  · constructor
+    · exact hx1.1
+    · exact h5
+  · exact hx1.2
+}
 
-example {I : Type*} (f : α → β) (A : I → Set α) : (f '' ⋃ i, A i) = ⋃ i, f '' A i := by sorry
+example {I : Type*} (f : α → β) (A : I → Set α) : (f '' ⋃ i, A i) = ⋃ i, f '' A i := by {
+  ext x
+  simp
+  constructor
+  · intro h1
+    obtain ⟨x1, hx ⟩:= h1
+    obtain ⟨hei, hx1 ⟩:= hx
+    obtain ⟨i, hi ⟩:= hei
+    use i
+    use x1
+  · intro h1
+    obtain ⟨i, hi ⟩:= h1
+    obtain ⟨x1,hx1 ⟩:= hi
+    use x1
+    constructor
+    · use i
+      exact hx1.1
+    · exact hx1.2
+}
 
 example : (fun x : ℝ ↦ x ^ 2) '' univ = { y : ℝ | y ≥ 0 } := by sorry
 

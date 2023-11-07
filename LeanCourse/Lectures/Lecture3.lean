@@ -86,15 +86,22 @@ example (h : exp a ≤ exp b) : a ≤ b := by sorry
 
 /- `gcongr` is very convenient for monotonicity of functions. -/
 
-example (h : a ≤ b) (h2 : b ≤ c) : exp a ≤ exp c := by sorry
+example (h : a ≤ b) (h2 : b ≤ c) : exp a ≤ exp c := by
+  gcongr
+  exact le_trans h h2
 
 
 
-example (h : a ≤ b) : c - exp b ≤ c - exp a := by sorry
+example (h : a ≤ b) : c - exp b ≤ c - exp a := by gcongr
 
 
 
-example (h : a ≤ b) (h2 : b < c) (h3 : x ≤ y) : a + x ≤ c + y := by sorry
+example (h : a ≤ b) (h2 : b < c) (h3 : x ≤ y) : a + x ≤ c + y := by {
+  gcongr
+  calc a
+    ≤ b := h
+    _ ≤ c := by exact le_of_lt h2
+}
 
 
 /- Remark: for equalities, you should use `congr` instead of `gcongr` -/

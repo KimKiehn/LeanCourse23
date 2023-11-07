@@ -56,6 +56,9 @@ variable (a : Point)
 #check a.z
 #check Point.x a
 
+
+example : a.x= Point.x a := by rfl
+
 end
 
 
@@ -163,7 +166,7 @@ structure PosPoint where
   y_pos : 0 < y
   z_pos : 0 < z
 
-def PointPoint.add (a b : PosPoint) : PosPoint :=
+def PosPoint.add (a b : PosPoint) : PosPoint :=
 { x := a.x + b.x
   y := a.y + b.y
   z := a.z + b.z
@@ -196,7 +199,8 @@ And it gets ugly when you have more than 2 projections. -/
 
 example (x : PosReal) : x.1 > 0 := x.2
 
-
+def PosPoint'' : Type :=
+  {x : ℝ × (ℝ × ℝ) // x.1 > 0 ∧ x.2.1 >0 ∧ x.2.2 >0  }
 
 
 
@@ -402,16 +406,54 @@ example (x : ℝ) : x * 1 = x := mul_one x
 `x₀ ≠ x₁` in it.
 Then state and prove the lemma that for any object in this class we have `∀ z, z ≠ x₀ ∨ z ≠ x₁.` -/
 
+structure SBipointed (α : Type) where
+  x1: α
+  x2: α
+  neq: x1 ≠ x2
 
-
+lemma noteq (α: Type) (B: SBipointed (α)):  ∀ (z :α), z≠ B.x1 ∨ z≠ B.x2:= by{
+  intro z
+  by_contra hz
+  have h: z=B.x1 ∧ z=B.x2:= by exact and_iff_not_or_not.mpr hz
+  have h2: B.x1=B.x2 := by{
+    obtain ⟨h11,h12 ⟩:= h
+    calc B.x1= z:= by exact id h11.symm
+      _=B.x2:= by exact h12
+  }
+  have h1: ¬ (B.x1=B.x2):= by exact B.neq
+  exact h1 h2
+}
 /- 2. Define scalar multiplication of a real number and a `Point`.
 Also define scalar multiplication of a positive real number and a `PosPoint`. -/
 
+namespace Point
 
+def scalarMul (a : Point)(u : ℝ ) : Point :=
+⟨a.x *u , a.y *u , a.z *u ⟩
+
+end Point
+
+namespace PosPoint
+
+def scalarMul (a : PosPoint)(u : ℝ )(hu: u>0) : PosPoint :=
+ { x := a.x * u
+   y := a.y * u
+   z := a.z * u
+   x_pos := by refine Real.mul_pos ?_ hu; exact a.x_pos
+   y_pos := by refine Real.mul_pos ?_ hu; exact a.y_pos
+   z_pos := by refine Real.mul_pos ?_ hu; exact a.z_pos }
+end PosPoint
 
 /- 3. Define Pythagorean triples, i.e. triples `a b c : ℕ` with `a^2 + b^2 = c^2`.
 Give an example of a Pythagorean triple, and show that multiplying a Pythagorean triple by a
 constant gives another Pythagorean triple. -/
+
+structure PythTrip where
+  a: ℕ
+  b: ℕ
+  c: ℕ
+  pyth: a^2+b^2=c^2
+
 
 
 

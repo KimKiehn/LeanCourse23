@@ -43,8 +43,13 @@ example (x : ℝ) : x ≤ x :=
 #check (lt_trans : a < b → b < c → a < c)
 
 -- Try this.
-example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by
-  sorry
+example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by{
+  apply lt_of_le_of_lt h₀
+  apply lt_trans h₁
+  exact lt_of_le_of_lt h₂ h₃
+
+}
+
 
 example (h₀ : a ≤ b) (h₁ : b < c) (h₂ : c ≤ d) (h₃ : d < e) : a < e := by
   linarith
@@ -86,12 +91,14 @@ example (h₀ : a ≤ b) (h₁ : c < d) : a + exp c + e < b + exp d + e := by
     apply exp_lt_exp.mpr h₁
   apply le_refl
 
-example (h₀ : d ≤ e) : c + exp (a + d) ≤ c + exp (a + e) := by sorry
+example (h₀ : d ≤ e) : c + exp (a + d) ≤ c + exp (a + e) := by gcongr
 
 example : (0 : ℝ) < 1 := by norm_num
 
 example (h : a ≤ b) : log (1 + exp a) ≤ log (1 + exp b) := by
   have h₀ : 0 < 1 + exp a := by sorry
+
+
   have h₁ : 0 < 1 + exp b := by sorry
   apply (log_le_log h₀ h₁).mpr
   sorry
@@ -123,7 +130,21 @@ example : 2 * a * b ≤ a ^ 2 + b ^ 2 := by
     _ ≥ 0 := by apply pow_two_nonneg
   linarith
 
-example : |a * b| ≤ (a ^ 2 + b ^ 2) / 2 := by
+example : |a * b| ≤ (a ^ 2 + b ^ 2) / 2 := by{
+  have h₀ : 2 * a * b ≤ a ^ 2 + b ^ 2 := by
+    have h₁ : 0 ≤ a ^ 2 - 2 * a * b + b ^ 2
+    calc
+      a ^ 2 - 2 * a * b + b ^ 2 = (a - b) ^ 2 := by ring
+      _ ≥ 0 := by apply pow_two_nonneg
+    linarith
+  have h₂ :  -2 * a * b ≤ a ^ 2 + b ^ 2 := by
+    have h₃ : 0≤ a ^ 2 + 2*a*b + b ^ 2
+    calc
+      a ^ 2 + 2*a*b + b ^ 2=(a + b) ^ 2 := by ring
+      _ ≥ 0 := by apply pow_two_nonneg
+    linarith
   sorry
+}
+
 
 #check abs_le'.mpr

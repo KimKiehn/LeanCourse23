@@ -52,7 +52,7 @@ theorem neg_add_cancel_left (a b : R) : -a + (a + b) = b := by
   rw [← add_assoc, add_left_neg, zero_add]
 
 -- Prove these:
-theorem add_neg_cancel_right (a b : R) : a + b + -b = a := by
+theorem add_neg_cancel_right (a b : R) : a + b + -b = a := by 
   sorry
 
 theorem add_left_cancel {a b c : R} (h : a + b = a + c) : b = c := by

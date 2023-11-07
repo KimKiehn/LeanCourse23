@@ -23,7 +23,35 @@ local macro_rules | `($x ^ $y) => `(HPow.hPow $x $y)
 
 open Nat Finset BigOperators in
 lemma exercise4_1 (n : ℕ) :
-    (∑ i in range (n + 1), i ^ 3 : ℚ) = (∑ i in range (n + 1), i : ℚ) ^ 2 := by sorry
+    (∑ i in range (n + 1), i ^ 3 : ℚ) = (∑ i in range (n + 1), i : ℚ) ^ 2 := by {
+      have h1:∀ (n :ℕ),  (∑ i in range (n + 1), i : ℚ)=n*(n+1)/2 := by {
+        intro n
+        induction n
+        case zero => simp
+        case succ k ih =>
+          rw [sum_range_succ, ih]
+          push_cast
+          ring
+      }
+
+      rw[h1]
+      induction n
+      case zero => simp
+      case succ k ik =>
+        rw [sum_range_succ, ik]
+        push_cast
+
+        field_simp
+        symm
+        norm_cast
+
+        ring
+
+
+
+
+
+    }
 
 open Set in
 /-

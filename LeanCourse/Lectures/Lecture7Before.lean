@@ -28,13 +28,23 @@ def fac : ℕ → ℕ
   | 0 => 1
   | n + 1 => (n + 1) * fac n
 
-lemma fac_zero : fac 0 = 1 := by sorry
+lemma fac_zero : fac 0 = 1 := by {
+  exact rfl
+}
 
-lemma fac_succ (n : ℕ) : fac (n + 1) = (n + 1) * fac n := by sorry
+lemma fac_succ (n : ℕ) : fac (n + 1) = (n + 1) * fac n := by exact rfl
 
-example : fac 4 = 24 := by sorry
+example : fac 4 = 24 := by exact rfl
 
-theorem fac_pos (n : ℕ) : 0 < fac n := by sorry
+theorem fac_pos (n : ℕ) : 0 < fac n := by {
+  induction n with
+  | zero =>
+    rw[fac_zero]
+    exact Nat.one_pos
+  | succ n ih =>
+    rw[fac_succ]
+    exact Nat.succ_mul_pos n ih
+}
 
 /-
 Two useful tactics:
@@ -42,7 +52,14 @@ Two useful tactics:
 `positivity`: can show that something is positive/non-negative from using that its components are positive/non-negative.
 -/
 
-theorem pow_two_le_fac (n : ℕ) : 2 ^ n ≤ fac (n + 1) := by sorry
+theorem pow_two_le_fac (n : ℕ) : 2 ^ n ≤ fac (n + 1) := by {
+  induction n with
+  | zero => exact Nat.le_refl (2 ^ 0)
+  | succ n hn =>
+    rw[fac, pow_add, mul_comm]
+    gcongr
+    exact Nat.le_add_left (2 ^ 1) n
+}
 
 
 open BigOperators Finset
@@ -55,14 +72,29 @@ example (f : ℕ → ℝ) : ∑ i in range 0, f i = 0 :=
 example (f : ℕ → ℝ) (n : ℕ) : ∑ i in range (n + 1), f i = (∑ i in range n, f i) + f n :=
   sum_range_succ f n
 
-example (n : ℕ) : fac n = ∏ i in range n, (i + 1) := by sorry
+example (n : ℕ) : fac n = ∏ i in range n, (i + 1) := by {
+  induction n
+  · case zero => simp
+  · case succ n ih =>
+    rw[fac, prod_range_succ, ← ih, mul_comm]
+}
 
 /- The following result is denoted using division of natural numbers.
 This is defined as division, rounded down.
 This makes it harder to prove things about it, so we generally avoid using it
 (unless you actually want to round down sometimes). -/
 
-theorem sum_id (n : ℕ) : (∑ i in range (n + 1), i) = n * (n + 1) / 2 := by sorry
+theorem sum_id (n : ℕ) : (∑ i in range (n + 1), i) = n * (n + 1) / 2 := by {
+  symm
+  rw[Nat.div_eq_of_eq_mul_left]
+  norm_num
+  symm
+  induction n
+  case zero => simp
+  case succ n hn =>
+    rw[sum_range_succ, add_mul, hn]
+    ring
+}
 
 
 
@@ -83,7 +115,16 @@ Note: when coercing from `ℕ` to e.g. `ℚ` these tactics will not push/pull ca
 since `↑n - ↑m = ↑(n - m)` and `↑n / ↑m = ↑(n / m)` are not always true.
 -/
 
-example : (∑ i in range (n + 1), i : ℚ) = n * (n + 1) / 2 := by sorry
+
+
+example : (∑ i in range (n + 1), i : ℚ) = n * (n + 1) / 2 := by {
+  induction n
+  case zero => simp
+  case succ n hn =>
+    rw[sum_range_succ, hn]
+    push_cast
+    ring
+}
 
 
 
@@ -94,17 +135,60 @@ def fib : ℕ → ℕ
   | 1 => 1
   | (n + 2) => fib (n + 1) + fib n
 
+lemma fibssuc (n : ℕ) : fib (n + 2) = fib (n + 1)+ fib n := by exact rfl
+
 /- ## Exercises -/
 
-example : ∑ i in range n, fib (2 * i + 1) = fib (2 * n) := by sorry
+example : ∑ i in range n, fib (2 * i + 1) = fib (2 * n) := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+     rw[sum_range_succ, ih]
+     ring
+     symm
+     rw[add_comm, fibssuc]
+     ring
 
-example : (∑ i in range n, fib i : ℤ) = fib (n + 1) - 1 := by sorry
+}
 
-example : 6 * ∑ i in range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1) := by sorry
+example : (∑ i in range n, fib i : ℤ) = fib (n + 1) - 1 := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+    rw[sum_range_succ, ih]
+    ring
+    symm
+    push_cast
+    rw[add_comm, add_comm 2, fibssuc]
+    push_cast
+    ring
 
-example : (∑ i in range (n + 1), i ^ 3 : ℚ) = (n * (n + 1) / 2 : ℚ) ^ 2 := by sorry
+}
 
-example (n : ℕ) : fac (2 * n) = fac n * 2 ^ n * ∏ i in range n, (2 * i + 1) := by sorry
+example : 6 * ∑ i in range (n + 1), i ^ 2 = n * (n + 1) * (2 * n + 1) := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+    rw[sum_range_succ, mul_add, ih]
+    ring
+}
+
+example : (∑ i in range (n + 1), i ^ 3 : ℚ) = (n * (n + 1) / 2 : ℚ) ^ 2 := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+    rw[sum_range_succ, ih]
+    push_cast
+    ring
+}
+
+example (n : ℕ) : fac (2 * n) = fac n * 2 ^ n * ∏ i in range n, (2 * i + 1) := by {
+  induction n
+  case zero => simp
+  case succ n ih =>
+    rw[prod_range_succ, mul_add, fac, fac, fac, ih]
+    ring
+}
 
 
 
@@ -120,16 +204,46 @@ def ψ : ℝ := (1 - sqrt 5) / 2
 /- `Nat.two_step_induction` can be used to do an induction with 2 induction hypotheses, i.e.
 `P n → P (n + 1) → P (n + 2)`. -/
 
+@[simp] lemma ϕ_sub_ψ_ne_zero : ϕ - ψ ≠ 0 := by{
+  simp[ϕ, ψ]
+  field_simp
+}
+
+@[simp] lemma ϕ_sq : ϕ ^ 2 = ϕ + 1 := by {
+  simp[ϕ, add_sq]
+  field_simp
+  ring
+
+}
+
+@[simp] lemma ψ_sq : ψ ^ 2 = ψ + 1 := by {
+  simp [ψ , sub_sq]
+  field_simp
+  ring
+}
+
 #check Nat.two_step_induction
 
-lemma coe_fib_eq (n : ℕ) : (fib n : ℝ) = (ϕ ^ n - ψ ^ n) / (ϕ - ψ) := by sorry
+lemma coe_fib_eq (n : ℕ) : (fib n : ℝ) = (ϕ ^ n - ψ ^ n) / (ϕ - ψ) := by {
+  induction n using Nat.two_step_induction
+  case zero => simp
+  case one => simp
+  case step n hn1 hn2 =>
+    rw[fib]
+    push_cast
+    rw[hn1, hn2]
+    field_simp
+    simp[pow_add]
+    ring
+
+}
 
 /- The following lemmas will be useful for this.
 `field_simp` is a useful tactic that can often cancel denominators. -/
 
--- @[simp] lemma ϕ_sub_ψ_ne_zero : ϕ - ψ ≠ 0 := by sorry sorry
--- @[simp] lemma ϕ_sq : ϕ ^ 2 = ϕ + 1 := by sorry sorry
--- @[simp] lemma ψ_sq : ψ ^ 2 = ψ + 1 := by sorry sorry
+--
+--
+--
 
 /- `Nat.strongRec` is used for strong induction-/
 #check Nat.strongRec
@@ -142,20 +256,35 @@ lemma coe_fib_eq (n : ℕ) : (fib n : ℝ) = (ϕ ^ n - ψ ^ n) / (ϕ - ψ) := by
 * (in)equalities in different types are not the same statement.
 * you can use `norm_cast` to simplify (in)equalities involving casts. -/
 
-example (n : ℤ) (h : (n : ℚ) = 3) : 3 = n := by sorry
+example (n : ℤ) (h : (n : ℚ) = 3) : 3 = n := by {
+  norm_cast at h
+  exact id h.symm
+}
 
-example (q q' : ℚ) (h : q ≤ q') : exp q ≤ exp q' := by sorry
+example (q q' : ℚ) (h : q ≤ q') : exp q ≤ exp q' := by {
+  gcongr
+  norm_cast
+}
 
-example (n : ℤ) (h : 0 < n) : 0 < sqrt n := by sorry
+example (n : ℤ) (h : 0 < n) : 0 < sqrt n := by {
+  rw[sqrt_pos]
+  norm_cast
+}
 
-example (n m : ℕ) : (n : ℝ) < (m : ℝ) ↔ n < m := by sorry
+example (n m : ℕ) : (n : ℝ) < (m : ℝ) ↔ n < m := by {
+  norm_cast
+}
 
-example (n m : ℕ) (hn : 2 ∣ n) (h : n / 2 = m) : (n : ℚ) / 2 = m := by sorry
+example (n m : ℕ) (hn : 2 ∣ n) (h : n / 2 = m) : (n : ℚ) / 2 = m := by {
+  norm_cast
+}
 
 /- We can also induct on various other inductively defined types.
 
 `Nat.le_induction` is used to induct in equalities of the natural numbers. -/
-theorem fac_dvd_fac (n m : ℕ) (h : n ≤ m) : fac n ∣ fac m := by sorry
+theorem fac_dvd_fac (n m : ℕ) (h : n ≤ m) : fac n ∣ fac m := by {
+  sorry
+}
 
 
 
@@ -168,7 +297,23 @@ a specific collection of sets. It is defined inductively. -/
 open TopologicalSpace
 theorem le_generateFrom_iff_subset_isOpen {α : Type*} {t : TopologicalSpace α}
     {g : Set (Set α)} (h : g ⊆ { s | IsOpen[t] s }) :
-    { s | IsOpen[generateFrom g] s } ⊆ { s | IsOpen[t] s } := by sorry
+    { s | IsOpen[generateFrom g] s } ⊆ { s | IsOpen[t] s } := by {
+      intro s hs
+      simp
+      simp at hs
+      induction hs
+      case basic s hs =>
+        apply h
+        exact hs
+      case univ => simp
+      case inter s s' _ _ ihs ihs' =>
+        apply IsOpen.inter
+        exact ihs
+        exact ihs'
+      case sUnion S _ hS =>
+        apply isOpen_sUnion
+        exact fun t a => hS t a
+    }
 
 
 
