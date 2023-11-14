@@ -79,7 +79,6 @@ example {x : R} : x ∈ I + J ↔ ∃ a ∈ I, ∃ b ∈ J, a + b = x := by
 
 example : I * J ≤ I ⊓ J := mul_le_inf
 
-example {x : R} : x ∈ I * J ↔ ∃ a ∈ I, ∃ b ∈ J, a * b = x := by sorry
 
 example : CompleteLattice (Ideal R) := by infer_instance
 example : Semiring (Ideal R) := by infer_instance
@@ -165,7 +164,10 @@ example {R : Type*} [CommRing R] (r : R) : R[X] := X - C r
 /- `C` is registered as a ring homomorphism. -/
 #check C
 
-example {R : Type*} [CommRing R] (r : R) : (X + C r) * (X - C r) = X^2 - C (r ^ 2) := by sorry
+example {R : Type*} [CommRing R] (r : R) : (X + C r) * (X - C r) = X^2 - C (r ^ 2) := by {
+  ring
+  rw[C.map_pow]
+}
 
 /- You can access coefficients using `Polynomial.coeff` -/
 
@@ -176,6 +178,10 @@ example {R : Type*} [CommRing R] : (X^2 + 2*X + C 3 : R[X]).coeff 1 = 2 := by si
 /- Defining the degree of a polynomial is tricky because of the special case of the zero polynomial. Mathlib has two variants -/
 #check natDegree (R := R)
 #check degree (R := R)
+
+example [IsDomain R] (p q : R[X]): degree (p*q)= degree p +degree q:= by {
+  exact degree_mul
+}
 
 /- `WithBot ℕ` can be seen as `ℕ ∪ {-∞}`, except that `-∞` is denoted `⊥`. -/
 
@@ -301,7 +307,18 @@ end LinearAlgebra
 
 /- # Exercises -/
 
-theorem units_ne_neg_self [Ring R] [CharZero R] (u : Rˣ) : u ≠ -u := by sorry
+theorem units_ne_neg_self [Ring R] [CharZero R] (u : Rˣ) : u ≠ -u := by{
+  by_contra h
+  have hc: u+u=(0:R) := by {
+    nth_rw 1 [h]
+    simp
+  }
+
+
+
+
+
+}
 
 
 example (n m : ℤ) : span {n} ⊔ span {m} = span {gcd n m} := by sorry
