@@ -80,6 +80,10 @@ def INV (x: {x:R // IsAUnit x}): {x: R // IsAUnit x}:= ⟨Exists.choose x.2, by{
 
 } ⟩
 
+lemma MULINV (x : {x : R // IsAUnit x}): (INV x).1* x.1=1:=by{
+  rw[INV, Exists.choose_spec x.2]
+}
+
 
 
 instance exercise5_2 : Group {x : R // IsAUnit x} where
@@ -108,7 +112,7 @@ instance exercise5_2 : Group {x : R // IsAUnit x} where
   mul_left_inv := by {
     intro a
     ext
-    sorry
+    apply MULINV
   }
 
 -- you have the correct group structure if this is true by `rfl`
@@ -170,5 +174,54 @@ lemma exercise5_3 (x y : K) : (x + y) ^ p = x ^ p + y ^ p := by
 lemma exercise5_4 {R M M' : Type*} [Ring R] [AddCommGroup M] [Module R M] [Nontrivial M]
     [NoZeroSMulDivisors R M] [Module R (M →ₗ[R] M)]
     (h : ∀ (r : R) (f : M →ₗ[R] M) (x : M), (r • f) x = r • f x)
-    (r s : R) : r * s = s * r := by
-  sorry
+    (r s : R) : r * s = s * r := by{
+      have help: ∃ m :M, m ≠ (0:M):=by{
+        exact exists_ne 0
+      }
+      obtain ⟨m,hm ⟩:= help
+      have hh:   ∀ f : M  →ₗ[R] M, ∀ x: R,  (x • f) m=(0: M)→ x=(0:R) ∨  f m=(0:M):= by{
+          intro f x hxf
+          rw[h] at hxf
+          exact smul_eq_zero.mp hxf
+      }
+      let id: (M →ₗ[R] M):= LinearMap.id
+      have hlin:  ∀ x y :R, ∀ n :M, (x*y)• n= x •(y • n) := by {
+        exact fun x y n ↦ mul_smul x y n
+      }
+      have hllin: ∀ f : M  →ₗ[R] M, ∀ x: R, x• (f m)= f (x • m):=by exact fun f x ↦
+        (LinearMap.map_smul f x m).symm
+      have hhi: ((r*s-s*r)• id) m=(0:M) := by {
+        calc ((r*s-s*r)• id ) m= (r*s-s*r)• (id m):= by exact h (r * s - s * r) id m
+          _=(r*s)• (id m)- (s*r)• (id m):= by exact sub_smul (r * s) (s * r) (id m)
+          _=r•(s • (id ( m)))-(s*r)• (id m):= by {
+            specialize hlin r s (id m)
+            rw[hlin]
+          }
+          _=r • (id (s• m))-(s*r)• (id m):= by exact rfl
+          _= (r• id) ( s•m) -(s*r)• (id m):= by {
+            specialize h r id (s• m)
+            rw[h]
+          }
+          _= s• (r• id) m -(s*r)• (id m):= by {
+            specialize hllin (r• id) s
+            rw[hllin]
+          }
+          _= s• (r)• (id m) -(s*r)• (id m):= by {
+            exact
+              congrFun (congrArg HSub.hSub (congrArg (HSMul.hSMul s) (h r id m))) ((s * r) • id m)
+          }
+          _= (s*r) • (id m) -(s*r)• (id m):= by {
+            specialize hlin s r (id m)
+            rw[hlin]
+          }
+          _= 0:= by exact sub_self ((s * r) • id m)
+      }
+      specialize hh id (r*s-s*r) hhi
+      obtain h1 | h2:= hh
+      · symm
+        calc s*r = s*r + 0:= by exact self_eq_add_right.mpr rfl
+          _= s*r + (r*s - s*r) := by rw[h1]
+          _= r*s := by exact add_sub_cancel'_right (s * r) (r * s)
+      · simp at h2
+        contradiction
+    }

@@ -52,7 +52,12 @@ example (x : ℝ) : DifferentiableAt ℝ sin x :=
 
 example (x : ℝ) :
     HasDerivAt (fun x ↦ Real.cos x + Real.sin x)
-    (Real.cos x - Real.sin x) x := by sorry
+    (Real.cos x - Real.sin x) x := by {
+      rw[sub_eq_neg_add]
+      apply HasDerivAt.add
+      · exact hasDerivAt_cos x
+      · exact hasDerivAt_sin x
+    }
 
 
 
@@ -63,7 +68,20 @@ example (x : ℝ) :
 (normed) vector space. -/
 
 example (x : ℝ) : deriv (fun x ↦ ((Real.cos x) ^ 2, (Real.sin x) ^ 2)) x =
-    (- 2 * Real.cos x * Real.sin x, 2 * Real.sin x * Real.cos x) := by sorry
+    (- 2 * Real.cos x * Real.sin x, 2 * Real.sin x * Real.cos x) := by {
+      apply HasDerivAt.deriv
+      refine HasDerivAt.prod ?h.hf₁ ?h.hf₂
+      · suffices : HasDerivAt (fun x ↦ cos x ^ 2 ) (2* (cos x) ^ 1 * (- sin x )) x
+        simp at this
+        simp
+        exact this
+        apply HasDerivAt.pow
+        exact hasDerivAt_cos x
+      · convert HasDerivAt.pow 2 ?_ using 3
+        · simp
+        · exact hasDerivAt_sin x
+    }
+
 
 /-
 Lean has the following names for intervals
@@ -213,7 +231,11 @@ example (f : E → F) (f' : E →L[𝕜] F) (x₀ : E) (hff' : HasFDerivAt f f' 
 
 variable {f g : E → F} {n : ℕ∞}
 example (hf : ContDiff 𝕜 n f) (hg : ContDiff 𝕜 n g) :
-    ContDiff 𝕜 n (fun x ↦ (f x, 2 • f x + g x)) := by sorry
+    ContDiff 𝕜 n (fun x ↦ (f x, 2 • f x + g x)) := by {
+      refine ContDiff.prod hf ?hg
+      refine ContDiff.add ?hg.hf hg
+      exact ContDiff.const_smul 2 hf
+    }
 
 example : ContDiff 𝕜 0 f ↔ Continuous f := contDiff_zero
 
@@ -229,12 +251,54 @@ end NormedSpace
 /- # Exercises -/
 
 example (x : ℝ) :
-    deriv (fun x ↦ Real.exp (x ^ 2)) x = 2 * x * Real.exp (x ^ 2) := by sorry
+    deriv (fun x ↦ Real.exp (x ^ 2)) x = 2 * x * Real.exp (x ^ 2) := by {
+      apply HasDerivAt.deriv
+      simp
+      suffices: HasDerivAt ((fun y ↦ Real.exp y )∘ (fun x ↦ x ^ 2) ) ( 2 * x * Real.exp (x ^ 2) ) x
+      · simp at this
+        exact this
+      suffices: HasDerivAt ((fun y ↦ Real.exp y )∘ (fun x ↦ x ^ 2) ) (Real.exp (x ^ 2) *(2 * x) ) x
+      · simp
+        rw[mul_comm]
+        exact this
+
+      apply HasDerivAt.comp
+      · exact hasDerivAt_exp (x ^ 2)
+      · suffices : HasDerivAt (fun x ↦ x ^ 2) (2 * x ^1  * 1) x
+        · simp at this
+          exact this
+        apply HasDerivAt.pow
+        exact hasDerivAt_id' x
+    }
 
 /- If you have a continuous injective function `ℝ → ℝ` then `f` is monotone or antitone. This is a possible first step in proving that result.
 Prove this by contradiction using the intermediate value theorem. -/
 example {f : ℝ → ℝ} (hf : Continuous f) (h2f : Injective f) {a b x : ℝ}
-    (hab : a ≤ b) (h2ab : f a < f b) (hx : x ∈ Icc a b) : f a ≤ f x := by sorry
+    (hab : a ≤ b) (h2ab : f a < f b) (hx : x ∈ Icc a b) : f a ≤ f x := by {
+      by_contra h
+      simp at h
+      have h1: ∃ z∈ Ioo x b, f z= f a:= by {
+        apply intermediate_value_Ioo
+        · exact hx.2
+        · exact Continuous.continuousOn hf
+        · constructor
+          · exact h
+          · exact h2ab
+      }
+      obtain ⟨z ,hz ⟩:= h1
+      have h2: ¬ z=a:= by{
+        have help: a<z:= by {
+          calc a≤ x := by exact hx.1
+            _< z:= by exact hz.1.1
+        }
+        exact ne_of_gt help
+      }
+      have hcont: z=a:= by {
+        apply h2f
+        exact hz.2
+      }
+      exact h2 hcont
+    }
 
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]

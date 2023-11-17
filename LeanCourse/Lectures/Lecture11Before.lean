@@ -165,9 +165,13 @@ once! -/
 example {X Y Z : Type*} {F : Filter X} {G : Filter Y} {H : Filter Z}
     {f : X → Y} {g : Y → Z}
     (hf : Tendsto f F G) (hg : Tendsto g G H) :
-    Tendsto (g ∘ f) F H := by
-  sorry /- # Exercise -/
-
+    Tendsto (g ∘ f) F H := by{
+      rw[Tendsto_iff]
+      intro S hs
+      rw [@preimage_comp]
+      apply hf
+      exact hg hs
+    }
 /-
 Filters also allow us to reason about things that are
 "eventually true". If `F : Filter X` and `P : X → Prop` then
@@ -199,7 +203,13 @@ variable {Y : Type*} [TopologicalSpace Y]
 
 
 example {ι : Type*} (s : ι → Set X) : interior (⋂ i, s i) ⊆ ⋂ i, interior (s i) := by
-  sorry
+  {
+    intro x hx
+    simp
+    intro i
+    apply interior_mono ?_ hx
+    exact iInter_subset (fun i ↦ s i) i
+  }
 
 /- A map between topological spaces is continuous if the
 preimages of open sets are open. -/
@@ -231,7 +241,9 @@ example {x : X} {s : Set X} :
   mem_nhds_iff
 
 example {x : X} {s : Set X} (h : s ∈ 𝓝 x) : x ∈ s := by
-  sorry
+  rw[mem_nhds_iff] at h
+  obtain ⟨t, ht, ho, hxt ⟩:= h
+  exact ht hxt
 
 
 
