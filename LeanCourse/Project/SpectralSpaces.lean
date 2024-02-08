@@ -9,6 +9,10 @@ open TopologicalSpace
 variable {X : Type*} [t: TopologicalSpace X]
 universe u
 
+/-
+In this file we formalize the notion of a spectral space and give and equivalent characterization of it.
+-/
+-- we start by some elementary topology which wass not completely in the mathlib
 theorem IsTopologyBasis.mono (B B' :Set ( Set X))(hB: (IsTopologicalBasis B)) (hBB': B ⊆ B' ) (hB': ∀ O: Set X, O ∈ B' → IsOpen O): IsTopologicalBasis B':=by{
   constructor
   · intro O₁ ho1 O₂ ho2 x hx
@@ -115,6 +119,77 @@ theorem isCompact_iff_finite_subcover'{K: Set X} :
             simp
             exact hU'
       }
+lemma isCompact_subset_compl_open (K: Set X)(K': Set X)(U: Set X)(hU: IsOpen U)(hKK': K'⊆K )(hK: IsCompact K) (hUK': U∩ K' =∅ )(hKUK': K⊆  K'∪ U): IsCompact K':=by{
+  rw[isCompact_iff_finite_subcover']
+  intro C hCO hC
+  rw[isCompact_iff_finite_subcover'] at hK
+  specialize hK (C∪{U})
+  have: ∃ s, K ⊆ ⋃₀ s ∧ s ⊆ C ∪ {U} ∧ Set.Finite s:=by{
+    apply hK
+    · intro U' hU'
+      simp at hU'
+      obtain h1 | h2:= hU'
+      · rw[h1]
+        exact hU
+      · specialize hCO U' h2
+        exact hCO
+    · have: K' ∪ U ⊆ ⋃₀ (C ∪ {U}):=by{
+        have: ⋃₀ (C ∪ {U})= (⋃₀ (C)) ∪ U:= by {
+          rw[Set.sUnion_union]
+          have: ⋃₀ {U}=U:=by{
+            exact Set.sUnion_singleton U
+          }
+          rw[this]
+        }
+        rw[this]
+        exact Set.union_subset_union_left U hC
+      }
+      exact Set.Subset.trans hKUK' this
+  }
+  obtain⟨s, hs ⟩:= this
+  use (s∩ C)
+  constructor
+  · intro x hx
+    simp
+    by_contra hcon
+    simp at hcon
+    have hcontra: x∈ U:=by{
+      have: x∈ ⋃₀ s:=by{
+        apply hs.1
+        apply hKK'
+        exact hx
+      }
+      simp at this
+      obtain⟨t, ht ⟩:= this
+      have: t=U:=by{
+        have htC: ¬ t∈ C:=by{
+          by_contra hcontra
+          specialize hcon t ht.1 hcontra
+          exact hcon ht.2
+        }
+        have: t∈ C∪ {U}:=by exact hs.2.1 ht.1
+        simp at this
+        obtain h1| h2:= this
+        · exact h1
+        · exact (htC h2).elim
+      }
+      rw[this.symm]
+      exact ht.2
+    }
+    have: x∈ U∩ K':=by{
+      exact Set.mem_inter hcontra hx
+    }
+    have:  ¬ U∩ K'= ∅:=by{
+      intro f
+      rw[f] at this
+      exact this
+    }
+    exact this hUK'
+  · constructor
+    · exact Set.inter_subset_right s C
+    · exact Set.Finite.inter_of_left hs.2.2 C
+
+}
 -- I recognized too late that the following lemma already exists
 /-lemma IsTopologicalBasis.open_compact_eq_fin_iUnion {B : Set (Set X)} (hB : IsTopologicalBasis B) {O : Set X}
     (hou : IsOpen O) (hcomp: IsCompact O): ∃ (β : Type u_1), ∃ (α: Finset β) (f : α → Set X), (O = ⋃ i, f i) ∧ ∀ i, f i ∈ B:=by{
@@ -324,6 +399,10 @@ lemma BaseOfQc_iff: (∃ (B:Set ( Set X)), (IsTopologicalBasis B) ∧ (∀ O₁�
       · intro O hO
         exact hO.2
  }
+
+noncomputable section
+open Classical
+
 
 
 @[mk_iff SpectralSpace_iff]

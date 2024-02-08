@@ -13,6 +13,14 @@ variable {X : Type*} [T: TopologicalSpace X]
 open Ring
 open Topology
 
+/-
+This file contains a proof of the Alexander subbase theorem used to deduce the
+compactness of sets in a topological space whose topology is generated from a
+subbase.
+The first theorem and lemmas are just other versions of compactness equivalences.
+The proof of the subbase theorem itself will rely on the ultrafilter lemma (not on AC).
+-/
+
 theorem isCompact_iff_finite_subfamily_closed' {K: Set X} :
     IsCompact K ↔ ∀ (I: Set (Set X)),
       (∀ A∈ I, IsClosed (A)) → (K ∩ ⋂₀ I = ∅) →
